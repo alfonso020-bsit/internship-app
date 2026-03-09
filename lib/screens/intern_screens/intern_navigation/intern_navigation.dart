@@ -2,40 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../utils/theme_extension.dart';
 import '../../../services/auth_service.dart';
-import '../../../models/agency_menu_item.dart';
-import 'agency_navigation_provider.dart';
+import '../../../models/intern_menu_item.dart';
+import 'intern_navigation_provider.dart';
 
-// Import all agency screens (they will be wrapped in AgencyBaseScreen)
-import '../dashboard/agency_dashboard_screen.dart';
-import '../interns/agency_interns_screen.dart';
-import '../applicants/agency_applicants_screen.dart';
-import '../post/agency_post_screen.dart';
-import '../profile/agency_profile_screen.dart';
-import '../reports/agency_reports_screen.dart';
+// Import all intern screens
+import '../dashboard/intern_dashboard_screen.dart';
+import '../applications/intern_applications_screen.dart';
+import '../internships/intern_internships_screen.dart';
+import '../profile/intern_profile_screen.dart';
+import '../documents/intern_documents_screen.dart';
+import '../schedule/intern_schedule_screen.dart';
 
-class AgencyNavigation extends StatefulWidget {
-  final Widget? child; // Make child optional
+class InternNavigation extends StatefulWidget {
   final String currentRoute;
-  final List<Widget>? appBarActions;
-  final String? title;
 
-  const AgencyNavigation({
+  const InternNavigation({
     super.key,
-    this.child,
     required this.currentRoute,
-    this.appBarActions,
-    this.title,
   });
 
   @override
-  State<AgencyNavigation> createState() => _AgencyNavigationState();
+  State<InternNavigation> createState() => _InternNavigationState();
 }
 
-class _AgencyNavigationState extends State<AgencyNavigation> {
+class _InternNavigationState extends State<InternNavigation> {
   final AuthService _authService = AuthService();
   
-  late List<AgencyMenuItem> menuItems;
+  late List<InternMenuItem> menuItems;
   late List<Widget> _screens;
+  late List<String> _titles;
 
   @override
   void initState() {
@@ -43,37 +38,37 @@ class _AgencyNavigationState extends State<AgencyNavigation> {
     
     // Initialize menu items
     menuItems = [
-      AgencyMenuItem(
+      InternMenuItem(
         title: 'Dashboard',
-        route: '/agency/dashboard',
+        route: '/intern/dashboard',
         icon: Icons.dashboard,
       ),
-      AgencyMenuItem(
-        title: 'Interns',
-        route: '/agency/interns',
-        icon: Icons.people,
+      InternMenuItem(
+        title: 'Applications',
+        route: '/intern/applications',
+        icon: Icons.assignment,
       ),
-      AgencyMenuItem(
-        title: 'Applicants',
-        route: '/agency/applicants',
-        icon: Icons.assignment_ind,
+      InternMenuItem(
+        title: 'Internships',
+        route: '/intern/internships',
+        icon: Icons.work,
       ),
-      AgencyMenuItem(
-        title: 'Posts',
-        route: '/agency/post',
-        icon: Icons.post_add,
+      InternMenuItem(
+        title: 'Schedule',
+        route: '/intern/schedule',
+        icon: Icons.calendar_today,
       ),
-      AgencyMenuItem(
-        title: 'Reports',
-        route: '/agency/reports',
-        icon: Icons.bar_chart,
+      InternMenuItem(
+        title: 'Documents',
+        route: '/intern/documents',
+        icon: Icons.folder,
       ),
-      AgencyMenuItem(
+      InternMenuItem(
         title: 'Profile',
-        route: '/agency/profile',
+        route: '/intern/profile',
         icon: Icons.person,
       ),
-      AgencyMenuItem(
+      InternMenuItem(
         title: 'Logout',
         route: '/logout',
         icon: Icons.logout,
@@ -81,27 +76,62 @@ class _AgencyNavigationState extends State<AgencyNavigation> {
       ),
     ];
 
-    // Initialize screens - these will be wrapped in AgencyBaseScreen
+    // Initialize screens
     _screens = [
-      const AgencyDashboardScreen(),
-      const AgencyInternsScreen(),
-      const AgencyApplicantsScreen(),
-      const AgencyPostScreen(),
-      const AgencyReportsScreen(),
-      const AgencyProfileScreen(),
+      const InternDashboardScreen(),
+      const InternApplicationsScreen(),
+      const InternInternshipsScreen(),
+      const InternScheduleScreen(),
+      const InternDocumentsScreen(),
+      const InternProfileScreen(),
     ];
+
+    _titles = [
+      'Dashboard',
+      'Applications',
+      'Internships',
+      'Schedule',
+      'Documents',
+      'Profile',
+    ];
+
+    // Set initial index based on currentRoute
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<InternNavigationProvider>(context, listen: false);
+      int initialIndex = _getIndexFromRoute(widget.currentRoute);
+      provider.updateRoute(initialIndex);
+    });
+  }
+
+  int _getIndexFromRoute(String route) {
+    switch (route) {
+      case '/intern/dashboard':
+        return 0;
+      case '/intern/applications':
+        return 1;
+      case '/intern/internships':
+        return 2;
+      case '/intern/schedule':
+        return 3;
+      case '/intern/documents':
+        return 4;
+      case '/intern/profile':
+        return 5;
+      default:
+        return 0;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => AgencyNavigationProvider(),
-      child: Consumer<AgencyNavigationProvider>(
+      create: (_) => InternNavigationProvider(),
+      child: Consumer<InternNavigationProvider>(
         builder: (context, provider, _) {
           return Scaffold(
             appBar: AppBar(
-              title: Text(_getTitle(provider.currentIndex)),
-              backgroundColor: context.green,
+              title: Text(_titles[provider.currentIndex]),
+              backgroundColor: context.studentColor, // Use student color from your theme
               foregroundColor: Colors.white,
               leading: Builder(
                 builder: (context) => IconButton(
@@ -109,29 +139,16 @@ class _AgencyNavigationState extends State<AgencyNavigation> {
                   onPressed: () => Scaffold.of(context).openDrawer(),
                 ),
               ),
-              actions: widget.appBarActions,
             ),
             drawer: _buildDrawer(context, provider),
-            body: _screens[provider.currentIndex], // This screen is already wrapped
+            body: _screens[provider.currentIndex],
           );
         },
       ),
     );
   }
 
-  String _getTitle(int index) {
-    switch (index) {
-      case 0: return 'Dashboard';
-      case 1: return 'Interns';
-      case 2: return 'Applicants';
-      case 3: return 'Posts';
-      case 4: return 'Reports';
-      case 5: return 'Profile';
-      default: return 'Agency Portal';
-    }
-  }
-
-  Widget _buildDrawer(BuildContext context, AgencyNavigationProvider provider) {
+  Widget _buildDrawer(BuildContext context, InternNavigationProvider provider) {
     return Drawer(
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
@@ -169,7 +186,7 @@ class _AgencyNavigationState extends State<AgencyNavigation> {
       height: 150,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: context.green,
+        color: context.studentColor,
         borderRadius: const BorderRadius.only(
           bottomRight: Radius.circular(36),
         ),
@@ -178,18 +195,18 @@ class _AgencyNavigationState extends State<AgencyNavigation> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 30,
-              backgroundColor: Colors.white,
+              backgroundColor: context.white,
               child: Icon(
-                Icons.business_center,
+                Icons.school,
                 size: 35,
-                color: Color(0xFF009444),
+                color: context.studentColor,
               ),
             ),
             const SizedBox(height: 8),
             const Text(
-              'Agency Portal',
+              'Intern Portal',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 18,
@@ -204,21 +221,21 @@ class _AgencyNavigationState extends State<AgencyNavigation> {
 
   Widget _buildDrawerItem(
     BuildContext context,
-    AgencyMenuItem item,
+    InternMenuItem item,
     bool isSelected,
     int index,
-    AgencyNavigationProvider provider,
+    InternNavigationProvider provider,
   ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: isSelected ? context.green.withOpacity(0.1) : null,
+        color: isSelected ? context.studentColor.withOpacity(0.1) : null,
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
         leading: Icon(
           item.icon, 
-          color: isSelected ? context.green : context.dark,
+          color: isSelected ? context.studentColor : context.dark,
           size: 24,
         ),
         title: Text(
@@ -226,7 +243,7 @@ class _AgencyNavigationState extends State<AgencyNavigation> {
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 14,
-            color: isSelected ? context.green : context.dark,
+            color: isSelected ? context.studentColor : context.dark,
           ),
         ),
         onTap: () {
@@ -237,7 +254,7 @@ class _AgencyNavigationState extends State<AgencyNavigation> {
     );
   }
 
-  Widget _buildLogoutItem(BuildContext context, AgencyMenuItem item) {
+  Widget _buildLogoutItem(BuildContext context, InternMenuItem item) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       child: ListTile(
